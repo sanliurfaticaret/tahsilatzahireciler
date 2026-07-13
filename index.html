@@ -13,7 +13,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
         :root { --midnight: #0f172a; --gold: #f59e0b; --gold-dark: #b45309; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--midnight); color: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--midnight); color: #f8fafc; margin: 0; }
         .font-serif { font-family: 'Playfair Display', serif; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
         .gold-gradient { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
@@ -21,7 +21,6 @@
         .sidebar-link:hover { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
         .active-link { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border-right: 4px solid #f59e0b; font-weight: 600; }
         input, select, textarea { background: #1e293b !important; border: 1px solid #334155 !important; color: white !important; }
-        [v-cloak] { display: none; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
@@ -29,7 +28,7 @@
 </head>
 <body>
 
-<div id="app" v-cloak>
+<div id="app">
     <!-- AUTH SCREEN -->
     <div v-if="!user" class="min-h-screen flex items-center justify-center p-4 bg-slate-950">
         <div class="glass w-full max-w-md p-10 rounded-3xl shadow-2xl border-t-4 border-amber-500">
@@ -92,7 +91,7 @@
                     <i class="fa-solid fa-file-invoice-dollar w-6 text-center"></i> Ekstreler
                 </a>
                 <a @click="view = 'bourse'" :class="{'active-link': view === 'bourse'}" class="sidebar-link flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                    <i class="fa-solid fa-globe w-6 text-center"></i> Dünya Borsası
+                    <i class="fa-solid fa-globe w-6 text-center"></i> Dünya borsası
                 </a>
                 <a v-if="isAdmin" @click="view = 'admin'" :class="{'active-link': view === 'admin'}" class="sidebar-link flex items-center gap-3 p-3 rounded-xl cursor-pointer border-t border-slate-800 pt-6">
                     <i class="fa-solid fa-user-shield w-6 text-center"></i> Admin Paneli
@@ -587,8 +586,8 @@ createApp({
         const isLoginMode = ref(true);
         const authForm = reactive({ email: '', password: '' });
         const forms = reactive({
-            farmer: { name: '', phone: '', address: '' },
-            merchant: { name: '', phone: '', address: '' },
+            farmer: { id: null, name: '', phone: '', address: '' },
+            merchant: { id: null, name: '', phone: '', address: '' },
             entry: { id: null, merchantId: '', product: '', weight: 0, price: 0, total: 0, protein: '', plate: '', warehouseId: '' },
             exit: { buyerId: '', price: 0, commission: 2, expenses: 0, sourceVade: '', buyerVade: '' },
             warehouse: { id: null, name: '', location: '' },
@@ -618,13 +617,13 @@ createApp({
                     const uDoc = await db.collection('users').doc(cred.user.uid).get();
                     if (uDoc.exists && !uDoc.data().isApproved) {
                         await auth.signOut();
-                        alert("Sistem yöneticisi tarafından henüz onaylanmadınız.");
+                        alert("Yönetici henüz hesabınızı onaylamadı.");
                         return;
                     }
                 } else { 
                     const cred = await auth.createUserWithEmailAndPassword(email, authForm.password);
                     await db.collection('users').doc(cred.user.uid).set({ email, isApproved: false, role: 'user', createdAt: new Date() });
-                    alert("Kayıt başarılı. Yönetici onayı beklendiği için giriş yapamazsınız.");
+                    alert("Kayıt başarılı. Yönetici onayından sonra girebilirsiniz.");
                     isLoginMode.value = true;
                     return;
                 }
@@ -653,7 +652,6 @@ createApp({
             stats.totalProfit = transactions.value.reduce((acc, t) => acc + ((t.gross || 0) - (t.net || 0)), 0);
         };
 
-        // ---CRUD OPERATIONS---
         const saveFarmer = async () => {
             if (forms.farmer.id) await db.collection('farmers').doc(forms.farmer.id).update({ ...forms.farmer });
             else await db.collection('farmers').add({ ...forms.farmer, uid: auth.currentUser.uid });
@@ -711,7 +709,7 @@ createApp({
         };
 
         const deleteDoc = async (col, id) => {
-            if (confirm('Silmek istediğinize emin misiniz?')) {
+            if (confirm('Sileceğinizden emin misiniz?')) {
                 await db.collection(col).doc(id).delete(); loadData();
             }
         };
@@ -723,7 +721,6 @@ createApp({
 
         const formatMoney = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
 
-        // --- ADMIN LOGIC ---
         const loadUsers = async () => {
             const snap = await db.collection('users').get();
             allUsers.value = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -738,7 +735,7 @@ createApp({
         };
         const saveUser = async () => {
             const email = forms.user.username + '@borsa.com';
-            const cred = await auth.createUser({ email, password: forms.user.password });
+            const cred = await auth.createUserWithEmailAndPassword(email, forms.user.password);
             await db.collection('users').doc(cred.user.uid).set({
                 name: forms.user.name, email: email, isApproved: true, role: 'user', createdAt: new Date()
             });
