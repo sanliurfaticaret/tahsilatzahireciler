@@ -29,8 +29,14 @@
 <body>
 
 <div id="app">
+    <!-- LOADING SCREEN -->
+    <div v-if="isLoading" class="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-amber-500 mb-4"></div>
+        <p class="text-lg font-medium">Sistem Yükleniyor...</p>
+    </div>
+
     <!-- AUTH SCREEN -->
-    <div v-if="!user" class="min-h-screen flex items-center justify-center p-4 bg-slate-950">
+    <div v-else-if="!user" class="min-h-screen flex items-center justify-center p-4 bg-slate-950">
         <div class="glass w-full max-w-md p-10 rounded-3xl shadow-2xl border-t-4 border-amber-500">
             <div class="text-center mb-10">
                 <div class="inline-block p-4 rounded-2xl gold-gradient mb-4 shadow-lg">
@@ -583,6 +589,7 @@ createApp({
         const user = ref(null);
         const isAdmin = ref(false);
         const view = ref('dashboard');
+        const isLoading = ref(true);
         const systemError = ref(null);
         const isLoginMode = ref(true);
         const authForm = reactive({ email: '', password: '' });
@@ -611,7 +618,6 @@ createApp({
 
         const handleAuth = async () => {
             try {
-                systemError.value = null;
                 let email = authForm.email;
                 if (!email.includes('@')) { email = email.toLowerCase() + '@borsa.com'; }
                 if (isLoginMode.value) { 
@@ -629,52 +635,60 @@ createApp({
                     isLoginMode.value = true;
                     return;
                 }
-            } catch (e) { 
-                systemError.value = e.message;
-                alert("Hata: " + e.message); 
-            }
+            } catch (e) { alert("Hata: " + e.message); }
         };
 
         const logout = () => auth.signOut();
 
         const loadData = async () => {
-            const uid = auth.currentUser.uid;
-            const fetchCol = async (col) => {
-                const snap = await db.collection(col).where('uid', '==', uid).get();
-                return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            };
-            farmers.value = await fetchCol('farmers');
-            merchants.value = await fetchCol('merchants');
-            warehouses.value = await fetchCol('warehouses');
-            inventory.value = await fetchCol('inventory');
-            transactions.value = await fetchCol('transactions');
-            updateStats();
+            try {
+                const uid = auth.currentUser.uid;
+                const fetchCol = async (col) => {
+                    const snap = await db.collection(col).where('uid', '==', uid).get();
+                    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                };
+                farmers.value = await fetchCol('farmers');
+                merchants.value = await fetchCol('merchants');
+                warehouses.value = await fetchCol('warehouses');
+                inventory.value = await fetchCol('inventory');
+                transactions.value = await fetchCol('transactions');
+                updateStats();
+            } catch (e) {
+                console.error("Veri yükleme hatası:", e);
+                systemError.value = "Veriler yüklenirken bir hata oluştu. Lütfen Firestore kurallarını kontrol edin.";
+            }
         };
 
         const updateStats = () => {
-            stats.totalReceivables = transactions.value.reduce((acc, t) => acc + (t.gross || 0), 0);
-            stats.totalPayables = transactions.value.reduce((acc, t) => acc + (t.net || 0), 0);
-            stats.totalProfit = transactions.value.reduce((acc, t) => acc + ((t.gross || 0) - (t.net || 0)), 0);
+            stats.totalReceivables = transactions.value.reduce((acc, t) => acc + (Number(t.gross) || 0), 0);
+            stats.totalPayables = transactions.value.reduce((acc, t) => acc + (Number(t.net) || 0), 0);
+            stats.totalProfit = transactions.value.reduce((acc, t) => acc + ((Number(t.gross) || 0) - (Number(t.net) || 0)), 0);
         };
 
         const saveFarmer = async () => {
-            if (forms.farmer.id) await db.collection('farmers').doc(forms.farmer.id).update({ ...forms.farmer });
-            else await db.collection('farmers').add({ ...forms.farmer, uid: auth.currentUser.uid });
-            showFarmerModal.value = false; loadData();
+            try {
+                if (forms.farmer.id) await db.collection('farmers').doc(forms.farmer.id).update({ ...forms.farmer });
+                else await db.collection('farmers').add({ ...forms.farmer, uid: auth.currentUser.uid });
+                showFarmerModal.value = false; loadData();
+            } catch (e) { alert(e.message); }
         };
         const openEditFarmer = (f) => { forms.farmer = { ...f }; showFarmerModal.value = true; };
 
         const saveMerchant = async () => {
-            if (forms.merchant.id) await db.collection('merchants').doc(forms.merchant.id).update({ ...forms.merchant });
-            else await db.collection('merchants').add({ ...forms.merchant, uid: auth.currentUser.uid });
-            showMerchantModal.value = false; loadData();
+            try {
+                if (forms.merchant.id) await db.collection('merchants').doc(forms.merchant.id).update({ ...forms.merchant });
+                else await db.collection('merchants').add({ ...forms.merchant, uid: auth.currentUser.uid });
+                showMerchantModal.value = false; loadData();
+            } catch (e) { alert(e.message); }
         };
         const openEditMerchant = (m) => { forms.merchant = { ...m }; showMerchantModal.value = true; };
 
         const saveWarehouse = async () => {
-            if (forms.warehouse.id) await db.collection('warehouses').doc(forms.warehouse.id).update({ ...forms.warehouse });
-            else await db.collection('warehouses').add({ ...forms.warehouse, uid: auth.currentUser.uid });
-            showWarehouseModal.value = false; loadData();
+            try {
+                if (forms.warehouse.id) await db.collection('warehouses').doc(forms.warehouse.id).update({ ...forms.warehouse });
+                else await db.collection('warehouses').add({ ...forms.warehouse, uid: auth.currentUser.uid });
+                showWarehouseModal.value = false; loadData();
+            } catch (e) { alert(e.message); }
         };
         const openEditWarehouse = (w) => { forms.warehouse = { ...w }; showWarehouseModal.value = true; };
 
@@ -682,9 +696,11 @@ createApp({
             forms.entry.total = (forms.entry.weight * forms.entry.price) || 0;
         };
         const saveEntry = async () => {
-            if (forms.entry.id) await db.collection('inventory').doc(forms.entry.id).update({ ...forms.entry });
-            else await db.collection('inventory').add({ ...forms.entry, uid: auth.currentUser.uid });
-            showEntryModal.value = false; loadData();
+            try {
+                if (forms.entry.id) await db.collection('inventory').doc(forms.entry.id).update({ ...forms.entry });
+                else await db.collection('inventory').add({ ...forms.entry, uid: auth.currentUser.uid });
+                showEntryModal.value = false; loadData();
+            } catch (e) { alert(e.message); }
         };
         const openEditInventory = (s) => { forms.entry = { ...s }; calcEntryTotal(); showEntryModal.value = true; };
 
@@ -701,21 +717,25 @@ createApp({
         };
 
         const saveExit = async () => {
-            await db.collection('transactions').add({
-                uid: auth.currentUser.uid, sourceId: exitItem.value.entryMerchantId,
-                sourceName: exitItem.value.sourceName, buyerId: forms.exit.buyerId,
-                weight: exitItem.value.weight, product: exitItem.value.product,
-                gross: calcGross.value, net: calcNet.value,
-                sourceVade: forms.exit.sourceVade, buyerVade: forms.exit.buyerVade,
-                date: new Date().toLocaleDateString('tr-TR')
-            });
-            await db.collection('inventory').doc(exitItem.value.id).delete();
-            showExitModal.value = false; loadData();
+            try {
+                await db.collection('transactions').add({
+                    uid: auth.currentUser.uid, sourceId: exitItem.value.entryMerchantId,
+                    sourceName: exitItem.value.sourceName, buyerId: forms.exit.buyerId,
+                    weight: exitItem.value.weight, product: exitItem.value.product,
+                    gross: calcGross.value, net: calcNet.value,
+                    sourceVade: forms.exit.sourceVade, buyerVade: forms.exit.buyerVade,
+                    date: new Date().toLocaleDateString('tr-TR')
+                });
+                await db.collection('inventory').doc(exitItem.value.id).delete();
+                showExitModal.value = false; loadData();
+            } catch (e) { alert(e.message); }
         };
 
         const deleteDoc = async (col, id) => {
             if (confirm('Sileceğinizden emin misiniz?')) {
-                await db.collection(col).doc(id).delete(); loadData();
+                try {
+                    await db.collection(col).doc(id).delete(); loadData();
+                } catch (e) { alert(e.message); }
             }
         };
 
@@ -724,44 +744,58 @@ createApp({
             return m ? m.name : 'Bilinmiyor';
         };
 
-        const formatMoney = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
+        const formatMoney = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val || 0);
 
         const loadUsers = async () => {
-            const snap = await db.collection('users').get();
-            allUsers.value = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            try {
+                const snap = await db.collection('users').get();
+                allUsers.value = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } catch (e) { console.error("Kullanıcılar yüklenemedi:", e); }
         };
         const approveUser = async (uid) => {
-            await db.collection('users').doc(uid).update({ isApproved: true });
-            await loadUsers();
+            try {
+                await db.collection('users').doc(uid).update({ isApproved: true });
+                await loadUsers();
+            } catch (e) { alert(e.message); }
         };
         const toggleApproval = async (u) => {
-            await db.collection('users').doc(u.id).update({ isApproved: !u.isApproved });
-            await loadUsers();
+            try {
+                await db.collection('users').doc(u.id).update({ isApproved: !u.isApproved });
+                await loadUsers();
+            } catch (e) { alert(e.message); }
         };
         const saveUser = async () => {
-            const email = forms.user.username + '@borsa.com';
-            const cred = await auth.createUserWithEmailAndPassword(email, forms.user.password);
-            await db.collection('users').doc(cred.user.uid).set({
-                name: forms.user.name, email: email, isApproved: true, role: 'user', createdAt: new Date()
-            });
-            showUserModal.value = false; await loadUsers();
+            try {
+                const email = forms.user.username + '@borsa.com';
+                const cred = await auth.createUserWithEmailAndPassword(email, forms.user.password);
+                await db.collection('users').doc(cred.user.uid).set({
+                    name: forms.user.name, email: email, isApproved: true, role: 'user', createdAt: new Date()
+                });
+                showUserModal.value = false; await loadUsers();
+            } catch (e) { alert(e.message); }
         };
 
-        onMounted(() => {
-            auth.onAuthStateChanged(async u => { 
-                user.value = u; 
-                if (u) {
-                    loadData();
-                    if (u.email === 'AREN@borsa.com') {
-                        isAdmin.value = true;
-                        await loadUsers();
+        onMounted(async () => {
+            try {
+                auth.onAuthStateChanged(async u => { 
+                    user.value = u; 
+                    if (u) {
+                        await loadData();
+                        if (u.email === 'AREN@borsa.com') {
+                            isAdmin.value = true;
+                            await loadUsers();
+                        }
                     }
-                } 
-            });
+                    isLoading.value = false;
+                });
+            } catch (e) {
+                isLoading.value = false;
+                systemError.value = e.message;
+            }
         });
 
         return {
-            user, isAdmin, view, viewTitle, authForm, handleAuth, logout, isLoginMode,
+            user, isAdmin, view, viewTitle, authForm, handleAuth, logout, isLoginMode, isLoading, systemError,
             farmers, merchants, warehouses, inventory, transactions, stats,
             showFarmerModal, showMerchantModal, showEntryModal, showExitModal, showWarehouseModal, showUserModal,
             exitItem, forms, reportFilter, 
