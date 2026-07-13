@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zahireciler Borsası | Profesyonel Hesap Sistemi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
+        .gold-gradient { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .sidebar-link { transition: all 0.2s ease; color: #94a3b8; }
+        .sidebar-link:hover { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+        .active-link { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border-right: 4px solid #f59e0b; font-weight: 600; }
+        input, select, textarea { background: #1e293b !important; border: 1px solid #334155 !important; color: white !important; }
+        [v-cloak] { display: none; }
+        @media print { .no-print { display: none !important; } .main-content { margin-left: 0 !important; width: 100% !important; } }
+    </style>
+</head>
+<body>
+
+<div id="app" v-cloak>
+    <!-- AUTH SCREEN -->
+    <div v-if="!user" class="min-h-screen flex items-center justify-center p-4 bg-slate-950">
+        <div class="glass w-full max-w-md p-10 rounded-3xl shadow-2xl border-t-4 border-amber-500">
+            <div class="text-center mb-10">
+                <div class="inline-block p-4 rounded-2xl gold-gradient mb-4 shadow-lg">
+                    <i class="fa-solid fa-wheat-awn text-4xl text-white"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-white tracking-tight">Zahireciler Borsası</h1>
+                <p class="text-slate-400 mt-2">Yönetici Girişi</p>
+            </div>
+            <form @submit.prevent="handleAuth" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Kullanıcı Adı / E-posta</label>
+                    <input v-model="authForm.email" type="text" class="w-full p-3 rounded-xl outline-none" placeholder="AREN" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Şifre</label>
+                    <input v-model="authForm.password" type="password" class="w-full p-3 rounded-xl outline-none" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="w-full gold-gradient text-white font-bold py-3 rounded-xl transition transform hover:scale-105 shadow-xl">
+                    Giriş Yap
+                </button>
+            </form>
+            <div class="text-center mt-8">
+                <button @click="isLoginMode = !isLoginMode" class="text-amber-500 text-sm hover:underline">
+                    {{ isLoginMode ? 'Hesabınız yok mu? Kayıt olun' : 'Zaten hesabınız var mı? Giriş yapın' }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div v-else class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-72 glass hidden md:flex flex-col fixed h-full z-50 border-r border-slate-800">
+            <div class="p-8 border-b border-slate-800 flex items-center gap-3">
+                <div class="p-2 rounded-lg gold-gradient"><i class="fa-solid fa-wheat-awn text-white text-xl"></i></div>
+                <span class="font-bold text-xl tracking-tighter text-white">Z. BORSASI</span>
+            </div>
+            <nav class="flex-1 p-6 space-y-3">
+                <a @click="view = 'dashboard'" :class="{'active-link': view === 'dashboard'}" class="sidebar-link flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                    <i class="fa-solid fa-chart-line w-6 text-center"></i> Dashboard
+                </a>
+                <a @click="view = 'farmers'" :class="{'active-link': view === 'farmers'}" class="sidebar-link flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                    <i class="fa-solid fa-user-farmer w-6 text-center"></i> Çiftçiler
+                </a>
+                <a @click="view = 'merchants'" :class="{'active-link': view === 'merchants'}" class="sidebar-link flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                    <i class="fa-solid fa-shop w-6 text-center"></i> Esnaflar
+                </a>
+                <a @click="view = 'warehouse'" :class="{'active-link': view === 'warehouse'}" class="sidebar-link flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                    <i class="fa-solid fa-warehouse w-6 text-center"></i> Depo & Stoklar
+                </a>
+                <a @click="view = 'sales'" :class="{'active-link': view === 'sales'}" class="sidebar-link flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                    <i class="fa-solid fa-receipt w-6 text-center"></i> Tüm Satışlar
+                </a>
+                <a @click="view = 'products'" :class="{'active-link': view === 'products'}" class="sidebar-link flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                    <i class="fa-solid fa-box w-6 text-center"></i> Ürün Tanımları
+                </a>
+            </nav>
+            <div class="p-6 border-t border-slate-800">
+                <button @click="logout" class="w-full flex items-center gap-3 p-3 text-red-400 hover:bg-red-500/10 rounded-xl transition cursor-pointer font-medium">
+                    <i class="fa-solid fa-right-from-bracket w-6 text-center"></i> Güvenli Çıkış
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 md:ml-72 p-4 md:p-10">
+            <header class="flex justify-between items-center mb-10 glass p-5 rounded-2xl shadow-sm no-print">
+                <h2 class="text-2xl font-bold text-white">{{ viewTitle }}</h2>
+                <div class="flex items-center gap-4">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-sm font-semibold text-white">{{ user.email }}</p>
+                        <p class="text-xs text-slate-400">Sistem Yöneticisi</p>
+                    </div>
+                    <img :src="`https://ui-avatars.com/api/?name=${user.email}&background=f59e0b&color=fff`" class="w-11 h-11 rounded-full border-2 border-amber-500 shadow-md">
+                </div>
+            </header>
+
+            <!-- DASHBOARD -->
+            <div v-if="view === 'dashboard'" class="space-y-10">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="glass p-8 rounded-3xl border-t-4 border-blue-500 shadow-xl">
+                        <div class="p-3 bg-blue-500/20 rounded-xl text-blue-400 w-fit mb-4"><i class="fa-solid fa-hand-holding-dollar text-2xl"></i></div>
+                        <p class="text-slate-400 font-medium">Toplam Alacak (Esnaflardan)</p>
+                        <h3 class="text-4xl font-bold text-white mt-2">{{ formatMoney(stats.merchantReceivables) }}</h3>
+                    </div>
+                    <div class="glass p-8 rounded-3xl border-t-4 border-red-500 shadow-xl">
+                        <div class="p-3 bg-red-500/20 rounded-xl text-red-400 w-fit mb-4"><i class="fa-solid fa-money-bill-transfer text-2xl"></i></div>
+                        <p class="text-slate-400 font-medium">Toplam Borç (Kaynaklara)</p>
+                        <h3 class="text-4xl font-bold text-white mt-2">{{ formatMoney(stats.farmerPayables) }}</h3>
+                    </div>
+                    <div class="glass p-8 rounded-3xl border-t-4 border-amber-500 shadow-xl">
+                        <div class="p-3 bg-amber-500/20 rounded-xl text-amber-400 w-fit mb-4"><i class="fa-solid fa-scale-balanced text-2xl"></i></div>
+                        <p class="text-slate-400 font-medium">Tahmini Kâr</p>
+                        <h3 class="text-4xl font-bold text-white mt-2">{{ formatMoney(stats.totalProfit) }}</h3>
+                    </div>
+                </div>
+                <div class="glass p-8 rounded-3xl shadow-lg">
+                    <h4 class="text-xl font-bold mb-6 flex items-center gap-2"><i class="fa-solid fa-bolt text-amber-500"></i> Hızlı İşlem Merkezi</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <button @click="view = 'warehouse'; showEntryModal = true" class="group p-6 rounded-2xl bg-slate-800 hover:bg-slate-700 transition text-center border border-slate-700 hover:border-amber-500">
+                            <i class="fa-solid fa-truck-ramp-box text-amber-500 text-3xl mb-3 block group-hover:scale-110 transition"></i>
+                            <span class="font-semibold">Esnaftan Mal Al</span>
+                        </button>
+                        <button @click="view = 'sales'; showSaleModal = true" class="group p-6 rounded-2xl bg-slate-800 hover:bg-slate-700 transition text-center border border-slate-700 hover:border-amber-500">
+                            <i class="fa-solid fa-cart-shopping text-amber-500 text-3xl mb-3 block group-hover:scale-110 transition"></i>
+                            <span class="font-semibold">Hızlı Satış</span>
+                        </button>
+                        <button @click="view = 'farmers'; showFarmerModal = true" class="group p-6 rounded-2xl bg-slate-800 hover:bg-slate-700 transition text-center border border-slate-700 hover:border-amber-500">
+                            <i class="fa-solid fa-user-plus text-amber-500 text-3xl mb-3 block group-hover:scale-110 transition"></i>
+                            <span class="font-semibold">Çiftçi Kaydet</span>
+                        </button>
+                        <button @click="window.print()" class="group p-6 rounded-2xl bg-slate-800 hover:bg-slate-700 transition text-center border border-slate-700 hover:border-amber-500">
+                            <i class="fa-solid fa-print text-amber-500 text-3xl mb-3 block group-hover:scale-110 transition"></i>
+                            <span class="font-semibold">Rapor Yazdır</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FARMERS -->
+            <div v-if="view === 'farmers'" class="space-y-6">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-2xl font-bold text-white">Çiftçi Portföyü</h3>
+                    <button @click="showFarmerModal = true" class="gold-gradient px-6 py-3 rounded-xl font-bold shadow-lg">Yeni Çiftçi</button>
+                </div>
+                <div class="glass rounded-3xl overflow-hidden shadow-xl">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-800/50 text-slate-400 text-xs uppercase">
+                            <tr><th class="p-5">Ad Soyad</th><th class="p-5">Telefon</th><th class="p-5">Adres</th><th class="p-5 text-right">Yönetim</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="f in farmers" :key="f.id" class="border-t border-slate-800 hover:bg-slate-800/40 transition">
+                                <td class="p-5 font-semibold text-white">{{ f.name }}</td>
+                                <td class="p-5 text-slate-300">{{ f.phone }}</td>
+                                <td class="p-5 text-slate-400">{{ f.address }}</td>
+                                <td class="p-5 text-right space-x-3">
+                                    <button @click="showLoanModal(f)" class="text-blue-400 text-sm font-medium"><i class="fa-solid fa-hand-holding-dollar"></i> Borç Ver</button>
+                                    <button @click="deleteDoc('farmers', f.id)" class="text-red-400"><i class="fa-solid fa-trash-can"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- MERCHANTS -->
+            <div v-if="view === 'merchants'" class="space-y-6">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-2xl font-bold text-white">Esnaf Portföyü</h3>
+                    <button @click="showMerchantModal = true" class="gold-gradient px-6 py-3 rounded-xl font-bold shadow-lg">Yeni Esnaf</button>
+                </div>
+                <div class="glass rounded-3xl overflow-hidden shadow-xl">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-800/50 text-slate-400 text-xs uppercase">
+                            <tr><th class="p-5">İşletme Adı</th><th class="p-5">Telefon</th><th class="p-5">Adres</th><th class="p-5 text-right">Yönetim</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="m in merchants" :key="m.id" class="border-t border-slate-800 hover:bg-slate-800/40 transition">
+                                <td class="p-5 font-semibold text-white">{{ m.name }}</td>
+                                <td class="p-5 text-slate-300">{{ m.phone }}</td>
+                                <td class="p-5 text-slate-400">{{ m.address }}</td>
+                                <td class="p-5 text-right">
+                                    <button @click="deleteDoc('merchants', m.id)" class="text-red-400"><i class="fa-solid fa-trash-can"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- WAREHOUSE -->
+            <div v-if="view === 'warehouse'" class="space-y-10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-2xl font-bold text-white">Depo & Stok Kontrol</h3>
+                    <button @click="showEntryModal = true" class="gold-gradient px-6 py-3 rounded-xl font-bold shadow-lg">Esnaftan Mal Al</button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div v-for="w in warehouses" :key="w.id" class="glass p-6 rounded-3xl border-b-4 border-amber-500 text-center transition hover:bg-slate-800">
+                        <i class="fa-solid fa-warehouse text-3xl text-amber-500 mb-3 block"></i>
+                        <span class="text-lg font-bold text-white block">{{ w.name }}</span>
+                        <p class="text-xs text-slate-400 mt-1">{{ w.location }}</p>
+                    </div>
+                    <button @click="showWarehouseModal = true" class="border-2 border-dashed border-slate-700 rounded-3xl p-6 hover:border-amber-500 hover:text-amber-500 transition text-slate-500 font-medium">
+                        <i class="fa-solid fa-plus-circle text-2xl mb-2 block text-center"></i> Yeni Depo Ekle
+                    </button>
+                </div>
+                <div class="glass rounded-3xl overflow-hidden shadow-2xl">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-800/50 text-slate-400 text-xs uppercase">
+                            <tr><th class="p-5">Kaynak Esnaf</th><th class="p-5">Ürün</th><th class="p-5">Kilo</th><th class="p-5">Protein</th><th class="p-5">Plaka</th><th class="p-5 text-right">Satış</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="s in inventory" :key="s.id" class="border-t border-slate-800 hover:bg-slate-800/40 transition">
+                                <td class="p-5 font-semibold text-white">{{ getMerchantName(s.entryMerchantId) }}</td>
+                                <td class="p-5 text-slate-300">{{ s.product }}</td>
+                                <td class="p-5 text-slate-300 font-bold">{{ s.weight }} kg</td>
+                                <td class="p-5 text-slate-400">{{ s.protein }}</td>
+                                <td class="p-5 text-slate-400">{{ s.plate }}</td>
+                                <td class="p-5 text-right">
+                                    <button @click="prepareExit(s)" class="bg-amber-500 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-amber-600 transition shadow-md">SATIŞ YAP</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SALES -->
+            <div v-if="view === 'sales'" class="space-y-6">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-2xl font-bold text-white">Satış Kayıtları</h3>
+                    <button @click="showSaleModal = true" class="gold-gradient px-6 py-3 rounded-xl font-bold shadow-lg">Hızlı Satış</button>
+                </div>
+                <div class="glass rounded-3xl overflow-hidden shadow-2xl">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-800/50 text-slate-400 text-xs uppercase">
+                            <tr><th class="p-5">Tarih</th><th class="p-5">Kaynağı</th><th class="p-5">Alıcı Esnaf</th><th class="p-5">Brüt</th><th class="p-5">Net</th><th class="p-5">Vade</th><th class="p-5 text-right">İşlem</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="t in transactions" :key="t.id" class="border-t border-slate-800 hover:bg-slate-800/40 transition">
+                                <td class="p-5 text-xs text-slate-400">{{ t.date }}</td>
+                                <td class="p-5 font-semibold text-white">{{ t.sourceName }}</td>
+                                <td class="p-5 text-slate-300">{{ getMerchantName(t.buyerId) }}</td>
+                                <td class="p-5 text-blue-400 font-bold">{{ formatMoney(t.gross) }}</td>
+                                <td class="p-5 text-green-400 font-bold">{{ formatMoney(t.net) }}</td>
+                                <td class="p-5 text-xs text-slate-400">{{ t.sourceVade }} / {{ t.buyerVade }}</td>
+                                <td class="p-5 text-right">
+                                    <button @click="deleteDoc('transactions', t.id)" class="text-red-400 hover:text-red-300 transition"><i class="fa-solid fa-trash-can"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PRODUCTS -->
+            <div v-if="view === 'products'" class="space-y-6">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-2xl font-bold text-white">Ürün Tanımları</h3>
+                    <button @click="showProductModal = true" class="gold-gradient px-6 py-3 rounded-xl font-bold shadow-lg">Yeni Ürün Ekle</button>
+                </div>
+                <div class="glass rounded-3xl overflow-hidden shadow-xl">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-800/50 text-slate-400 text-xs uppercase">
+                            <tr><th class="p-5">Ürün Adı</th><th class="p-5 text-right">İşlem</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="p in products" :key="p.id" class="border-t border-slate-800 hover:bg-slate-800/40 transition">
+                                <td class="p-5 font-semibold text-white">{{ p.name }}</td>
+                                <td class="p-5 text-right">
+                                    <button @click="deleteDoc('products', p.id)" class="text-red-400"><i class="fa-solid fa-trash-can"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODALS -->
+    <!-- Farmer Modal -->
+    <div v-if="showFarmerModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+        <div class="glass w-full max-w-md p-8 rounded-3xl border-t-4 border-amber-500">
+            <h3 class="text-2xl font-bold mb-6 text-white">Yeni Çiftçi Kaydı</h3>
+            <div class="space-y-4">
+                <input v-model="forms.farmer.name" class="w-full p-3 rounded-xl outline-none" placeholder="Ad Soyad">
+                <input v-model="forms.farmer.phone" class="w-full p-3 rounded-xl outline-none" placeholder="Telefon">
+                <input v-model="forms.farmer.address" class="w-full p-3 rounded-xl outline-none" placeholder="Adres">
+                <div class="flex gap-3 pt-4">
+                    <button @click="showFarmerModal = false" class="flex-1 p-3 rounded-xl bg-slate-700">İptal</button>
+                    <button @click="saveFarmer" class="flex-1 p-3 rounded-xl gold-gradient font-bold">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Merchant Modal -->
+    <div v-if="showMerchantModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+        <div class="glass w-full max-w-md p-8 rounded-3xl border-t-4 border-amber-500">
+            <h3 class="text-2xl font-bold mb-6 text-white">Yeni Esnaf Kaydı</h3>
+            <div class="space-y-4">
+                <input v-model="forms.merchant.name" class="w-//p-3 rounded-xl outline-none" placeholder="İşletme Adı">
+                <input v-model="forms.merchant.phone" class="w-full p-3 rounded-xl outline-none" placeholder="Telefon">
+                <input v-model="forms.merchant.address" class="w-full p-3 rounded-xl outline-none" placeholder="Adres">
+                <div class="flex gap-3 pt-4">
+                    <button @click="showMerchantModal = false" class="flex-1 p-3 rounded-xl bg-slate-700">İptal</button>
+                    <button @click="saveMerchant" class="flex-1 p-3 rounded-xl gold-gradient font-bold">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Entry Modal -->
+    <div v-if="showEntryModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+        <div class="glass w-full max-w-2xl p-8 rounded-3xl border-t-4 border-amber-500">
+            <h3 class="text-2xl font-bold mb-6 text-white"><i class="fa-solid fa-truck-ramp-box text-amber-500 me-2"></i>Esnaftan Mal Alımı</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="space-y-4">
+                    <label class="text-xs text-slate-400">Kaynak Esnaf</label>
+                    <select v-model="forms.entry.merchantId" class="w-full p-3 rounded-xl outline-none">
+                        <option v-for="m in merchants" :value="m.id">{{ m.name }}</option>
+                    </select>
+                    <label class="text-xs text-slate-400">Ürün Tipi</label>
+                    <select v-model="forms.entry.product" class="w-full p-3 rounded-xl outline-none">
+                        <option v-for="p in products" :value="p.name">{{ p.name }}</option>
+                    </select>
+                    <label class="text-xs text-slate-400">Sorumlu Depo</label>
+                    <select v-model="forms.entry.warehouseId" class="w-full p-3 rounded-xl outline-none">
+                        <option v-for="w in warehouses" :value="w.id">{{ w.name }}</option>
+                    </select>
+                </div>
+                <div class="space-y-4">
+                    <label class="text-xs text-slate-400">Net Kilo (kg)</label>
+                    <input v-model.number="forms.entry.weight" type="number" class="w-full p-3 rounded-xl outline-none">
+                    <label class="text-xs text-slate-400">Protein (%)</label>
+                    <input v-model="forms.entry.protein" type="text" class="w-full p-3 rounded-xl outline-none">
+                    <label class="text-xs text-slate-400">Araç Plakası</label>
+                    <input v-model="forms.entry.plate" type="text" class="w-full p-3 rounded-xl outline-none">
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button @click="showEntryModal = false" class="flex-1 p-3 rounded-xl bg-slate-700">İptal</button>
+                <button @click="saveEntry" class="flex-1 p-3 rounded-xl gold-gradient font-bold">Stoka Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exit / Sale Modal -->
+    <div v-if="showExitModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+        <div class="glass w-full max-w-3xl p-8 rounded-3xl border-t-4 border-amber-500">
+            <h3 class="text-2xl font-bold mb-6 text-white">Satış & Tahsilat İşlemi</h3>
+            <div class="bg-slate-800/50 p-6 rounded-2xl mb-8 border border-slate-700 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div><p class="text-xs text-slate-400">Kaynak</p><p class="text-lg font-bold text-white">{{ exitItem.sourceName }}</p></div>
+                <div><p class="text-xs text-slate-400">Mal</p><p class="text-lg font-bold text-white">{{ exitItem.weight }}kg | {{ exitItem.product }}</p></div>
+                <div class="text-right"><p class="text-xs text-slate-400">Plaka</p><p class="text-lg font-bold text-white">{{ exitItem.plate }}</p></div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="space-y-4">
+                    <label class="text-xs text-slate-400">Alıcı Esnaf</label>
+                    <select v-model="forms.exit.buyerId" class="w-full p-3 rounded-xl outline-none">
+                        <option v-for="m in merchants" :value="m.id">{{ m.name }}</option>
+                    </select>
+                    <label class="text-xs text-slate-400">Birim Fiyat (₺)</label>
+                    <input v-model.number="forms.exit.price" type="number" class="w-full p-3 rounded-xl outline-none">
+                </div>
+                <div class="space-y-4">
+                    <label class="text-xs text-slate-400">Komisyon (%)</label>
+                    <input v-model.number="forms.exit.commission" type="number" class="w-full p-3 rounded-xl outline-none">
+                    <label class="text-xs text-slate-400">Ek Masraflar (₺)</label>
+                    <input v-model.number="forms.exit.expenses" type="number" class="w-//p-3 rounded-xl outline-none">
+                </div>
+                <div class="space-y-4">
+                    <label class="text-xs text-slate-400">Kaynak Ödeme Vadesi</label>
+                    <input v-model="forms.exit.sourceVade" type="date" class="w-full p-3 rounded-xl outline-none">
+                    <label class="text-xs text-slate-400">Esnaf Tahsil Vadesi</label>
+                    <input v-model="forms.exit.buyerVade" type="date" class="w-full p-3 rounded-xl outline-none">
+                </div>
+            </div>
+            <div class="bg-amber-500/10 p-6 rounded-2xl mb-8 grid grid-cols-1 md:grid-cols-2 gap-8 text-center border border-amber-500/20">
+                <div><p class="text-sm text-amber-500 uppercase">Alıcıya Yazılacak Brüt</p><p class="text-4xl font-black text-white">{{ formatMoney(calculateGross()) }}</p></div>
+                <div><p class="text-sm text-amber-500 uppercase">Kaynağa Ödenecek Net</p><p class="text-4xl font-black text-white">{{ formatMoney(calculateNet()) }}</p></div>
+            </div>
+            <div class="flex gap-4">
+                <button @click="showExitModal = false" class="flex-1 p-4 rounded-xl bg-slate-700">İptal</button>
+                <button @click="saveExit" class="flex-1 p-4 rounded-xl gold-gradient font-bold">Satışı Onayla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loan Modal -->
+    <div v-if="showLoanModalItem" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+        <div class="glass w-full max-w-md p-8 rounded-3xl border-t-4 border-blue-500">
+            <h3 class="text-2xl font-bold mb-6 text-white">Çiftçiye Elden Borç</h3>
+            <div class="space-y-4">
+                <input v-model.number="forms.loan.amount" type="number" class="w-full p-3 rounded-xl outline-none" placeholder="Tutar (₺)">
+                <input v-model="forms.loan.date" type="date" class="w-full p-3 rounded-xl outline-none">
+                <textarea v-model="forms.loan.description" class="w-full p-3 rounded-xl outline-none" placeholder="Açıklama..."></textarea>
+                <div class="flex gap-3 pt-4">
+                    <button @click="showLoanModalItem = false" class="flex-1 p-3 rounded-xl bg-slate-700">İptal</button>
+                    <button @click="saveLoan" class="flex-1 p-3 rounded-xl gold-gradient font-bold">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Modal -->
+    <div v-if="showProductModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+        <div class="glass w-full max-w-md p-8 rounded-3xl border-t-4 border-amber-500">
+            <h3 class="text-2xl font-bold mb-6 text-white">Yeni Ürün Tanımla</h3>
+            <div class="space-y-4">
+                <input v-model="forms.product.name" class="w-full p-3 rounded-xl outline-none" placeholder="Örn: Buğday">
+                <div class="flex gap-3 pt-4">
+                    <button @click="showProductModal = false" class="flex-1 p-3 rounded-xl bg-slate-700">İptal</button>
+                    <button @click="saveProduct" class="flex-1 p-3 rounded-xl gold-gradient font-bold">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Warehouse Add Modal -->
+    <div v-if="showWarehouseModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+        <div class="glass w-full max-w-md p-8 rounded-3xl border-t-4 border-amber-500">
+            <h3 class="text-2xl font-bold mb-6 text-white">Yeni Depo Ekle</h3>
+            <div class="space-y-4">
+                <input v-model="forms.warehouse.name" class="w-full p-3 rounded-xl outline-none" placeholder="Depo Adı">
+                <input v-model="forms.warehouse.location" class="w-full p-3 rounded-xl outline-none" placeholder="Konum">
+                <div class="flex gap-3 pt-4">
+                    <button @click="showWarehouseModal = false" class="flex-1 p-3 rounded-xl bg-slate-700">İptal</button>
+                    <button @click="saveWarehouse" class="flex-1 p-3 rounded-xl gold-gradient font-bold">Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const firebaseConfig = {
+    apiKey: "AIzaSyB5zbLpi0_i0AQHPQ1sdwSX7J-7ZltKMyI",
+    authDomain: "tahsilat-f0914.firebaseapp.com",
+    projectId: "tahsilat-f0914",
+    storageBucket: "tahsilat-f0914.firebasestorage.app",
+    messagingSenderId: "1096318157319",
+    appId: "1:1096318157319:web:1f9a18253ad141e224a0a2",
+    measurementId: "G-1D9F1HJBL3"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+const { createApp, ref, onMounted, computed, reactive } = Vue;
+
+createApp({
+    setup() {
+        const user = ref(null);
+        const isLoginMode = ref(true);
+        const view = ref('dashboard');
+        const authForm = reactive({ email: '', password: '' });
+        const forms = reactive({
+            farmer: { name: '', phone: '', address: '' },
+            merchant: { name: '', phone: '', address: '' },
+            entry: { merchantId: '', product: '', weight: 0, protein: '', plate: '', warehouseId: '' },
+            exit: { buyerId: '', price: 0, commission: 2, expenses: 0, sourceVade: '', buyerVade: '' },
+            loan: { amount: 0, date: '', description: '' },
+            warehouse: { name: '', location: '' },
+            product: { name: '' }
+        });
+        const farmers = ref([]); const merchants = ref([]); const warehouses = ref([]);
+        const products = ref([]); const inventory = ref([]); const transactions = ref([]); const loans = ref([]);
+        const stats = reactive({ merchantReceivables: 0, farmerPayables: 0, totalProfit: 0 });
+        const showFarmerModal = ref(false); const showMerchantModal = ref(false);
+        const showEntryModal = ref(false); const showExitModal = ref(false);
+        const showWarehouseModal = ref(false); const showLoanModalItem = ref(false);
+        const showProductModal = ref(false);
+        const activeFarmer = ref(null); const exitItem = ref({});
+
+        const viewTitle = computed(() => {
+            const titles = { dashboard: 'Yönetici Paneli', farmers: 'Çiftçi Yönetimi', merchants: 'Esnaf Yönetimi', warehouse: 'Depo & Stok', sales: 'Tüm Satışlar', products: 'Ürün Tanımları' };
+            return titles[view.value];
+        });
+
+        const handleAuth = async () => {
+            try {
+                let email = authForm.email;
+                if (!email.includes('@')) { email = email.toLowerCase() + '@borsa.com'; }
+                if (isLoginMode.value) { await auth.signInWithEmailAndPassword(email, authForm.password); } 
+                else { await auth.createUserWithEmailAndPassword(email, authForm.password); }
+            } catch (e) { alert("Hata: " + e.message); }
+        };
+
+        const logout = () => auth.signOut();
+
+        const loadData = async () => {
+            const uid = auth.currentUser.uid;
+            const fetchCol = async (col) => {
+                const snap = await db.collection(col).where('uid', '==', uid).get();
+                return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            };
+            farmers.value = await fetchCol('farmers');
+            merchants.value = await fetchCol('merchants');
+            warehouses.value = await fetchCol('warehouses');
+            products.value = await fetchCol('products');
+            inventory.value = await fetchCol('inventory');
+            transactions.value = await fetchCol('transactions');
+            loans.value = await fetchCol('loans');
+            updateStats();
+        };
+
+        const updateStats = () => {
+            stats.merchantReceivables = transactions.value.reduce((acc, t) => acc + (t.gross || 0), 0);
+            stats.farmerPayables = transactions.value.reduce((acc, t) => acc + (t.net || 0), 0);
+            stats.totalProfit = transactions.value.reduce((acc, t) => acc + (t.gross - t.net || 0), 0);
+        };
+
+        const saveFarmer = async () => {
+            await db.collection('farmers').add({ ...forms.farmer, uid: auth.currentUser.uid });
+            forms.farmer = { name: '', phone: '', address: '' };
+            showFarmerModal.value = false; loadData();
+        };
+
+        const saveMerchant = async () => {
+            await db.collection('merchants').add({ ...forms.merchant, uid: auth.currentUser.uid });
+            forms.merchant = { name: '', phone: '', address: '' };
+            showMerchantModal.value = false; loadData();
+        };
+
+        const saveProduct = async () => {
+            await db.collection('products').add({ ...forms.product, uid: auth.currentUser.uid });
+            forms.product = { name: '' };
+            showProductModal.value = false; loadData();
+        };
+
+        const saveWarehouse = async () => {
+            await db.collection('warehouses').add({ ...forms.warehouse, uid: auth.currentUser.uid });
+            forms.warehouse = { name: '', location: '' };
+            showWarehouseModal.value = false; loadData();
+        };
+
+        const saveEntry = async () => {
+            await db.collection('inventory').add({ ...forms.entry, uid: auth.currentUser.uid });
+            forms.entry = { merchantId: '', product: '', weight: 0, protein: '', plate: '', warehouseId: '' };
+            showEntryModal.value = false; loadData();
+        };
+
+        const prepareExit = (item) => {
+            exitItem.value = { ...item, sourceName: getMerchantName(item.entryMerchantId) };
+            showExitModal.value = true;
+        };
+
+        const calculateGross = () => (exitItem.value.weight * forms.exit.price) || 0;
+        const calculateNet = () => {
+            const gross = calculateGross();
+            const comm = gross * (forms.exit.commission / 100);
+            return gross - comm - (forms.exit.expenses || 0);
+        };
+
+        const saveExit = async () => {
+            const gross = calculateGross();
+            const net = calculateNet();
+            await db.collection('transactions').add({
+                uid: auth.currentUser.uid,
+                sourceId: exitItem.value.entryMerchantId,
+                sourceName: exitItem.value.sourceName,
+                buyerId: forms.exit.buyerId,
+                weight: exitItem.value.weight,
+                product: exitItem.value.product,
+                gross: gross, net: net,
+                sourceVade: forms.exit.sourceVade,
+                buyerVade: forms.exit.buyerVade,
+                date: new Date().toLocaleDateString('tr-TR')
+            });
+            await db.collection('inventory').doc(exitItem.value.id).delete();
+            showExitModal.value = false; loadData();
+        };
+
+        const showLoanModal = (f) => { activeFarmer.value = f; showLoanModalItem.value = true; };
+        const saveLoan = async () => {
+            await db.collection('loans').add({ ...forms.loan, farmerId: activeFarmer.value.id, uid: auth.currentUser.uid });
+            showLoanModalItem.value = false; loadData();
+        };
+
+        const deleteDoc = async (col, id) => {
+            if (confirm('Silmek istediğinize emin misiniz?')) {
+                await db.collection(col).doc(id).delete(); loadData();
+            }
+        };
+
+        const getMerchantName = (id) => {
+            const m = merchants.value.find(m => m.id === id);
+            return m ? m.name : 'Bilinmiyor';
+        };
+
+        const formatMoney = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
+
+        onMounted(() => {
+            auth.onAuthStateChanged(u => { user.value = u; if (u) loadData(); });
+        });
+
+        return {
+            user, isLoginMode, authForm, handleAuth, logout, view, viewTitle,
+            farmers, merchants, warehouses, products, inventory, transactions, loans, stats,
+            showFarmerModal, showMerchantModal, showEntryModal, showExitModal, showWarehouseModal, showLoanModalItem, showProductModal,
+            activeFarmer, exitItem, forms,
+            saveFarmer, saveMerchant, saveWarehouse, saveProduct, saveEntry, prepareExit, calculateGross, calculateNet, saveExit,
+            showLoanModal, saveLoan, deleteDoc, getMerchantName, formatMoney,
+            view: computed({ get: () => view.value, set: (val) => view.value = val })
+        };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>
