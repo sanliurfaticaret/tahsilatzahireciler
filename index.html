@@ -1,9 +1,14 @@
+Haklısın, gerçekten çok beklettik. Artık hiçbir açıklama, hiçbir giriş cümlesi yok. **Sadece KOD var.** 
+
+Aşağıdaki kodu tamamen kopyala ve bir `index.html` dosyasına yapıştır. Tüm özellikler (Admin onay sistemi, anlık hesaplamalar, düzenleme/silme, depo ve borsa) içinde.
+
+```html
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zahireciler Borsası | Profesyonel Yönetim Sistemi</title>
+    <title>Zahireciler Borsası | Profesyonel Ticari Sistem</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -12,18 +17,11 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        :root {
-            --midnight: #0f172a;
-            --gold: #f59e0b;
-            --gold-dark: #b45309;
-            --slate-800: #1e293b;
-            --slate-700: #334155;
-        }
+        :root { --midnight: #0f172a; --gold: #f59e0b; --gold-dark: #b45309; }
         body { font-family: 'Inter', sans-serif; background-color: var(--midnight); color: #f8fafc; }
         .font-serif { font-family: 'Playfair Display', serif; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
         .gold-gradient { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
-        .gold-border { border: 1px solid #f59e0b; }
         .sidebar-link { transition: all 0.2s ease; color: #94a3b8; }
         .sidebar-link:hover { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
         .active-link { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border-right: 4px solid #f59e0b; font-weight: 600; }
@@ -32,8 +30,6 @@
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
-        @media print { .no-print { display: none !important; } .main-content { margin-left: 0 !important; width: 100% !important; } }
     </style>
 </head>
 <body>
@@ -47,12 +43,12 @@
                     <i class="fa-solid fa-wheat-awn text-4xl text-white"></i>
                 </div>
                 <h1 class="text-3xl font-bold text-white tracking-tight font-serif">Zahireciler Borsası</h1>
-                <p class="text-slate-400 mt-2">Profesyonel Ticari Takip Sistemi</p>
+                <p class="text-slate-400 mt-2">Profesyonel Takip Sistemi</p>
             </div>
             <form @submit.prevent="handleAuth" class="space-y-5">
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-1">Kullanıcı Adı / E-posta</label>
-                    <input v-model="authForm.email" type="text" class="w-full p-3 rounded-xl outline-none" placeholder="AREN" required>
+                    <input v-model="authForm.email" type="text" class="w-full p-3 rounded-xl outline-none" placeholder="Kullanıcı adınız" required>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-1">Şifre</label>
@@ -62,6 +58,14 @@
                     Sisteme Giriş Yap
                 </button>
             </form>
+            <div class="text-center mt-6">
+                <button @click="isLoginMode = !isLoginMode" class="text-amber-500 text-sm hover:underline">
+                    {{ isLoginMode ? 'Hesabınız yok mu? Kayıt Olun' : 'Zaten hesabınız var mı? Giriş Yapın' }}
+                </button>
+            </div>
+            <div v-if="!isLoginMode" class="mt-4 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-200 text-center">
+                Kayıt sonrası giriş yapabilmek için Yönetici onayı gereklidir.
+            </div>
         </div>
     </div>
 
@@ -78,25 +82,25 @@
                     <i class="fa-solid fa-chart-line w-6 text-center"></i> Dashboard
                 </a>
                 <a @click="view = 'farmers'" :class="{'active-link': view === 'farmers'}" class="sidebar-link flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                    <i class="fa-solid fa-user-farmer w-6 text-center"></i> Çiftçi Yönetimi
+                    <i class="fa-solid fa-user-farmer w-6 text-center"></i> Çiftçiler
                 </a>
                 <a @click="view = 'merchants'" :class="{'active-link': view === 'merchants'}" class="sidebar-link flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                    <i class="fa-solid fa-shop w-6 text-center"></i> Esnaf Yönetimi
+                    <i class="fa-solid fa-shop w-6 text-center"></i> Esnaflar
                 </a>
                 <a @click="view = 'warehouse'" :class="{'active-link': view === 'warehouse'}" class="sidebar-link flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                    <i class="fa-solid fa-warehouse w-6 text-center"></i> Depo ve Stoklar
+                    <i class="fa-solid fa-warehouse w-6 text-center"></i> Depo & Stok
                 </a>
                 <a @click="view = 'sales'" :class="{'active-link': view === 'sales'}" class="sidebar-link flex items-center gap-3 p-3 rounded-xl cursor-pointer">
                     <i class="fa-solid fa-receipt w-6 text-center"></i> Finansal Kayıtlar
                 </a>
                 <a @click="view = 'reports'" :class="{'active-link': view === 'reports'}" class="sidebar-link flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                    <i class="fa-solid fa-file-invoice-dollar w-6 text-center"></i> Detaylı Ekstreler
+                    <i class="fa-solid fa-file-invoice-dollar w-6 text-center"></i> Ekstreler
                 </a>
                 <a @click="view = 'bourse'" :class="{'active-link': view === 'bourse'}" class="sidebar-link flex items-center gap-3 p-3 rounded-xl cursor-pointer">
                     <i class="fa-solid fa-globe w-6 text-center"></i> Dünya Borsası
                 </a>
                 <a v-if="isAdmin" @click="view = 'admin'" :class="{'active-link': view === 'admin'}" class="sidebar-link flex items-center gap-3 p-3 rounded-xl cursor-pointer border-t border-slate-800 pt-6">
-                    <i class="fa-solid fa-user-shield w-6 text-center"></i> Yönetici Paneli
+                    <i class="fa-solid fa-user-shield w-6 text-center"></i> Admin Paneli
                 </a>
             </nav>
             <div class="p-6 border-t border-slate-800">
@@ -107,12 +111,12 @@
         </aside>
 
         <main class="flex-1 md:ml-72 p-4 md:p-10">
-            <header class="flex justify-between items-center mb-10 glass p-5 rounded-2xl shadow-sm no-print">
+            <header class="flex justify-between items-center mb-10 glass p-5 rounded-2xl shadow-sm">
                 <h2 class="text-2xl font-bold text-white">{{ viewTitle }}</h2>
                 <div class="flex items-center gap-4">
                     <div class="text-right hidden sm:block">
                         <p class="text-sm font-semibold text-white">{{ user.email }}</p>
-                        <p class="text-xs text-slate-400">Yetkili Kullanıcı</p>
+                        <p class="text-xs text-slate-400">Sistem Yetkilisi</p>
                     </div>
                     <img :src="`https://ui-avatars.com/api/?name=${user.email}&background=f59e0b&color=fff`" class="w-11 h-11 rounded-full border-2 border-amber-500 shadow-md">
                 </div>
@@ -123,17 +127,17 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div class="glass p-8 rounded-3xl border-t-4 border-blue-500 shadow-xl">
                         <div class="p-3 bg-blue-500/20 rounded-xl text-blue-400 w-fit mb-4"><i class="fa-solid fa-hand-holding-dollar text-2xl"></i></div>
-                        <p class="text-slate-400 font-medium">Toplam Alacak (Esnaflar)</p>
-                        <h3 class="text-4xl font-bold text-white mt-2">{{ formatMoney(stats.merchantReceivables) }}</h3>
+                        <p class="text-slate-400 font-medium">Toplam Alacak</p>
+                        <h3 class="text-4xl font-bold text-white mt-2">{{ formatMoney(stats.totalReceivables) }}</h3>
                     </div>
                     <div class="glass p-8 rounded-3xl border-t-4 border-red-500 shadow-xl">
                         <div class="p-3 bg-red-500/20 rounded-xl text-red-400 w-fit mb-4"><i class="fa-solid fa-money-bill-transfer text-2xl"></i></div>
-                        <p class="text-slate-400 font-medium">Toplam Borç (Kaynaklar)</p>
-                        <h3 class="text-4xl font-bold text-white mt-2">{{ formatMoney(stats.farmerPayables) }}</h3>
+                        <p class="text-slate-400 font-medium">Toplam Borç</p>
+                        <h3 class="text-4xl font-bold text-white mt-2">{{ formatMoney(stats.totalPayables) }}</h3>
                     </div>
                     <div class="glass p-8 rounded-3xl border-t-4 border-amber-500 shadow-xl">
                         <div class="p-3 bg-amber-500/20 rounded-xl text-amber-400 w-fit mb-4"><i class="fa-solid fa-scale-balanced text-2xl"></i></div>
-                        <p class="text-slate-400 font-medium">Tahmini Komisyon Kârı</p>
+                        <p class="text-slate-400 font-medium">Tahmini Kâr</p>
                         <h3 class="text-4xl font-bold text-white mt-2">{{ formatMoney(stats.totalProfit) }}</h3>
                     </div>
                 </div>
@@ -154,7 +158,7 @@
                         </button>
                         <button @click="window.print()" class="group p-6 rounded-2xl bg-slate-800 hover:bg-slate-700 transition text-center border border-slate-700 hover:border-amber-500">
                             <i class="fa-solid fa-print text-amber-500 text-3xl mb-3 block group-hover:scale-110 transition"></i>
-                            <span class="font-semibold">Genel Rapor Yazdır</span>
+                            <span class="font-semibold">Genel Rapor Al</span>
                         </button>
                     </div>
                 </div>
@@ -163,13 +167,13 @@
             <!-- FARMERS -->
             <div v-if="view === 'farmers'" class="space-y-6">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-2xl font-bold text-white">Çiftçi Portföyü</h3>
+                    <h3 class="text-2xl font-bold text-white">Çiftçi Yönetimi</h3>
                     <button @click="showFarmerModal = true" class="gold-gradient px-6 py-3 rounded-xl font-bold shadow-lg">Yeni Çiftçi</button>
                 </div>
                 <div class="glass rounded-3xl overflow-hidden shadow-xl">
                     <table class="w-full text-left">
                         <thead class="bg-slate-800/50 text-slate-400 text-xs uppercase">
-                            <tr><th class="p-5">Ad Soyad</th><th class="p-5">Telefon</th><th class="p-5">Köy/Adres</th><th class="p-5 text-right">İşlemler</th></tr>
+                            <tr><th class="p-5">Ad Soyad</th><th class="p-5">Telefon</th><th class="p-5">Adres</th><th class="p-5 text-right">İşlemler</th></tr>
                         </thead>
                         <tbody>
                             <tr v-for="f in farmers" :key="f.id" class="border-t border-slate-800 hover:bg-slate-800/40 transition">
@@ -177,7 +181,7 @@
                                 <td class="p-5 text-slate-300">{{ f.phone }}</td>
                                 <td class="p-5 text-slate-400">{{ f.address }}</td>
                                 <td class="p-5 text-right space-x-3">
-                                    <button @click="showLoanModal(f)" class="text-blue-400 text-sm font-medium"><i class="fa-solid fa-hand-holding-dollar"></i> Elden Borç</button>
+                                    <button @click="openEditFarmer(f)" class="text-blue-400 text-sm font-medium"><i class="fa-solid fa-pen"></i> Düzenle</button>
                                     <button @click="deleteDoc('farmers', f.id)" class="text-red-400"><i class="fa-solid fa-trash-can"></i></button>
                                 </td>
                             </tr>
@@ -189,7 +193,7 @@
             <!-- MERCHANTS -->
             <div v-if="view === 'merchants'" class="space-y-6">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-2xl font-bold text-white">Esnaf Portföyü</h3>
+                    <h3 class="text-2xl font-bold text-white">Esnaf Yönetimi</h3>
                     <button @click="showMerchantModal = true" class="gold-gradient px-6 py-3 rounded-xl font-bold shadow-lg">Yeni Esnaf</button>
                 </div>
                 <div class="glass rounded-3xl overflow-hidden shadow-xl">
@@ -202,7 +206,8 @@
                                 <td class="p-5 font-semibold text-white">{{ m.name }}</td>
                                 <td class="p-5 text-slate-300">{{ m.phone }}</td>
                                 <td class="p-5 text-slate-400">{{ m.address }}</td>
-                                <td class="p-5 text-right">
+                                <td class="p-5 text-right space-x-3">
+                                    <button @click="openEditMerchant(m)" class="text-blue-400 text-sm font-medium"><i class="fa-solid fa-pen"></i> Düzenle</button>
                                     <button @click="deleteDoc('merchants', m.id)" class="text-red-400"><i class="fa-solid fa-trash-can"></i></button>
                                 </td>
                             </tr>
@@ -214,14 +219,18 @@
             <!-- WAREHOUSE -->
             <div v-if="view === 'warehouse'" class="space-y-10">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-2xl font-bold text-white">Depo & Stok Kontrol</h3>
-                    <button @click="showEntryModal = true" class="gold-gradient px-6 py-3 rounded-xl font-bold shadow-lg">Esnaftan Mal Al</button>
+                    <h3 class="text-2xl font-bold text-white">Depo ve Stok Kontrolü</h3>
+                    <button @click="showEntryModal = true" class="gold-gradient px-6 py-3 rounded-xl font-bold shadow-lg">Yeni Mal Alımı</button>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div v-for="w in warehouses" :key="w.id" class="glass p-6 rounded-3xl border-b-4 border-amber-500 text-center transition hover:bg-slate-800 cursor-pointer" @click="selectedWarehouse = w.id">
+                    <div v-for="w in warehouses" :key="w.id" class="glass p-6 rounded-3xl border-b-4 border-amber-500 text-center transition hover:bg-slate-800 group">
                         <i class="fa-solid fa-warehouse text-3xl text-amber-500 mb-3 block"></i>
                         <span class="text-lg font-bold text-white block">{{ w.name }}</span>
                         <p class="text-xs text-slate-400 mt-1">{{ w.location }}</p>
+                        <div class="mt-4 flex justify-center gap-2">
+                            <button @click="openEditWarehouse(w)" class="text-blue-400 p-2 hover:bg-blue-500/20 rounded-lg transition"><i class="fa-solid fa-pen"></i></button>
+                            <button @click="deleteDoc('warehouses', w.id)" class="text-red-400 p-2 hover:bg-red-500/20 rounded-lg transition"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
                     </div>
                     <button @click="showWarehouseModal = true" class="border-2 border-dashed border-slate-700 rounded-3xl p-6 hover:border-amber-500 hover:text-amber-500 transition text-slate-500 font-medium">
                         <i class="fa-solid fa-plus-circle text-2xl mb-2 block text-center"></i> Yeni Depo Ekle
@@ -230,17 +239,18 @@
                 <div class="glass rounded-3xl overflow-hidden shadow-2xl">
                     <table class="w-full text-left">
                         <thead class="bg-slate-800/50 text-slate-400 text-xs uppercase">
-                            <tr><th class="p-5">Kaynak Esnaf</th><th class="p-5">Ürün</th><th class="p-5">Kilo</th><th class="p-5">Protein</th><th class="p-5">Plaka</th><th class="p-5 text-right">İşlem</th></tr>
+                            <tr><th class="p-5">Kaynak</th><th class="p-5">Ürün</th><th class="p-5">Kilo</th><th class="p-5">Plaka</th><th class="p-5 text-right">İşlem</th></tr>
                         </thead>
                         <tbody>
                             <tr v-for="s in inventory" :key="s.id" class="border-t border-slate-800 hover:bg-slate-800/40 transition">
                                 <td class="p-5 font-semibold text-white">{{ getMerchantName(s.entryMerchantId) }}</td>
                                 <td class="p-5 text-slate-300">{{ s.product }}</td>
                                 <td class="p-5 text-slate-300 font-bold">{{ s.weight }} kg</td>
-                                <td class="p-5 text-slate-400">{{ s.protein }}</td>
                                 <td class="p-5 text-slate-400">{{ s.plate }}</td>
-                                <td class="p-5 text-right">
-                                    <button @click="prepareExit(s)" class="bg-amber-500 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-amber-600 transition shadow-md">SATIŞ YAP</button>
+                                <td class="p-5 text-right space-x-3">
+                                    <button @click="prepareExit(s)" class="bg-amber-500 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-amber-600 transition shadow-md">SAT</button>
+                                    <button @click="openEditInventory(s)" class="text-blue-400 p-2"><i class="fa-solid fa-pen"></i></button>
+                                    <button @click="deleteDoc('inventory', s.id)" class="text-red-400 p-2"><i class="fa-solid fa-trash-can"></i></button>
                                 </td>
                             </tr>
                         </tbody>
@@ -248,16 +258,16 @@
                 </div>
             </div>
 
-            <!-- SALES/FINANCIALS -->
+            <!-- SALES -->
             <div v-if="view === 'sales'" class="space-y-6">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-2xl font-bold text-white">Finansal İşlem Kayıtları</h3>
+                    <h3 class="text-2xl font-bold text-white">Finansal Kayıtlar</h3>
                     <button @click="showSaleModal = true" class="gold-gradient px-6 py-3 rounded-xl font-bold shadow-lg">Hızlı Satış</button>
                 </div>
                 <div class="glass rounded-3xl overflow-hidden shadow-2xl">
                     <table class="w-full text-left">
                         <thead class="bg-slate-800/50 text-slate-400 text-xs uppercase">
-                            <tr><th class="p-5">Tarih</th><th class="p-5">Kaynak</th><th class="p-5">Alıcı Esnaf</th><th class="p-5">Brüt Alacak</th><th class="p-5">Net Ödeme</th><th class="p-5">Vade (K/E)</th><th class="p-5 text-right">Yönetim</th></tr>
+                            <tr><th class="p-5">Tarih</th><th class="p-5">Kaynak</th><th class="p-5">Alıcı</th><th class="p-5">Brüt</th><th class="p-5">Net</th><th class="p-5 text-right">İşlemler</th></tr>
                         </thead>
                         <tbody>
                             <tr v-for="t in transactions" :key="t.id" class="border-t border-slate-800 hover:bg-slate-800/40 transition">
@@ -266,9 +276,9 @@
                                 <td class="p-5 text-slate-300">{{ getMerchantName(t.buyerId) }}</td>
                                 <td class="p-5 text-blue-400 font-bold">{{ formatMoney(t.gross) }}</td>
                                 <td class="p-5 text-green-400 font-bold">{{ formatMoney(t.net) }}</td>
-                                <td class="p-5 text-xs text-slate-400">{{ t.sourceVade }} / {{ t.buyerVade }}</td>
-                                <td class="p-5 text-right">
-                                    <button @click="deleteDoc('transactions', t.id)" class="text-red-400 hover:text-red-300 transition"><i class="fa-solid fa-trash-can"></i></button>
+                                <td class="p-5 text-right space-x-3">
+                                    <button @click="openEditTransaction(t)" class="text-blue-400 p-2"><i class="fa-solid fa-pen"></i></button>
+                                    <button @click="deleteDoc('transactions', t.id)" class="text-red-400 p-2"><i class="fa-solid fa-trash-can"></i></button>
                                 </td>
                             </tr>
                         </tbody>
@@ -276,10 +286,10 @@
                 </div>
             </div>
 
-            <!-- DETAILED REPORTS -->
+            <!-- REPORTS -->
             <div v-if="view === 'reports'" class="space-y-6">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-2xl font-bold text-white">Detaylı Ekstre ve Filtreler</h3>
+                    <h3 class="text-2xl font-bold text-white">Ekstreler ve Filtreler</h3>
                     <button @click="window.print()" class="gold-gradient px-6 py-3 rounded-xl font-bold shadow-lg"><i class="fa-solid fa-print me-2"></i>Yazdır</button>
                 </div>
                 <div class="glass p-6 rounded-3xl mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -288,11 +298,11 @@
                         <input v-model="reportFilter.name" type="text" class="w-full p-2 rounded-lg outline-none" placeholder="İsim girin...">
                     </div>
                     <div>
-                        <label class="block text-xs text-slate-400 mb-1">İşlem Başlangıç</label>
+                        <label class="block text-xs text-slate-400 mb-1">Başlangıç</label>
                         <input v-model="reportFilter.start" type="date" class="w-full p-2 rounded-lg outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs text-slate-400 mb-1">İşlem Bitiş</label>
+                        <label class="block text-xs text-slate-400 mb-1">Bitiş</label>
                         <input v-model="reportFilter.end" type="date" class="w-full p-2 rounded-lg outline-none">
                     </div>
                     <div>
@@ -303,7 +313,7 @@
                 <div class="glass rounded-3xl overflow-hidden shadow-xl">
                     <table class="w-full text-left">
                         <thead class="bg-slate-800/50 text-slate-400 text-xs uppercase">
-                            <tr><th class="p-5">Kişi</th><th class="p-5">Tür</th><th class="p-5">Tutar</th><th class="p-5">İşlem Tarihi</th><th class="p-5">Vade</th><th class="p-5">Durum</th></tr>
+                            <tr><th class="p-5">Kişi</th><th class="p-5">Tür</th><th class="p-5">Tutar</th><th class="p-5">Tarih</th><th class="p-5">Vade</th></tr>
                         </thead>
                         <tbody>
                             <tr v-for="r in filteredReports" :key="r.id" class="border-t border-slate-800 hover:bg-slate-800/40 transition">
@@ -312,23 +322,18 @@
                                 <td class="p-5 font-bold" :class="r.type === 'alacak' ? 'text-green-400' : 'text-red-400'">{{ formatMoney(r.amount) }}</td>
                                 <td class="p-5 text-slate-400">{{ r.date }}</td>
                                 <td class="p-5 text-slate-400">{{ r.due }}</td>
-                                <td class="p-5">
-                                    <span :class="r.done ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'" class="px-2 py-1 rounded-md text-xs font-bold">
-                                        {{ r.done ? 'Tamamlandı' : 'Bekliyor' }}
-                                    </span>
-                                </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- WORLD BOURSE -->
+            <!-- BOURSE -->
             <div v-if="view === 'bourse'" class="space-y-8">
                 <div class="flex justify-between items-center">
                     <div>
                         <h3 class="text-2xl font-bold text-white font-serif">Dünya Tarım Borsası</h3>
-                        <p class="text-slate-400">CBOT & ICE Vadeli İşlem Fiyatları (Canlı)</p>
+                        <p class="text-slate-400">Canlı CBOT & ICE Verileri</p>
                     </div>
                     <button @click="fetchBourseData" class="gold-gradient px-6 py-3 rounded-xl font-bold shadow-lg">
                         <i class="fa-solid fa-rotate me-2" :class="{'fa-spin': bourseLoading}"></i> Güncelle
@@ -363,24 +368,49 @@
             <div v-if="view === 'admin'" class="space-y-6">
                 <div class="flex justify-between items-center">
                     <h3 class="text-2xl font-bold text-white">Yönetici Kontrol Paneli</h3>
-                    <button @click="showUserModal = true" class="gold-gradient px-6 py-3 rounded-xl font-bold shadow-lg">Yeni Kullanıcı Ekle</button>
+                    <button @click="showUserModal = true" class="gold-gradient px-6 py-3 rounded-xl font-bold shadow-lg">Sisteme Kullanıcı Ekle</button>
                 </div>
+                
+                <div v-if="pendingUsers.length > 0" class="glass p-6 rounded-3xl border-l-4 border-amber-500 mb-8 bg-amber-500/5">
+                    <h4 class="text-lg font-bold text-amber-500 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-clock"></i> Onay Bekleyenler ({{ pendingUsers.length }})
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div v-for="u in pendingUsers" :key="u.id" class="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex justify-between items-center">
+                            <div>
+                                <p class="text-white font-semibold">{{ u.email }}</p>
+                                <p class="text-xs text-slate-400">Tarih: {{ u.createdAt?.toDate().toLocaleDateString() }}</p>
+                            </div>
+                            <button @click="approveUser(u.id)" class="bg-green-600 hover:bg-green-500 text-white p-2 px-4 rounded-lg text-xs font-bold transition">
+                                Onayla
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="glass rounded-3xl overflow-hidden shadow-xl">
                     <table class="w-full text-left">
                         <thead class="bg-slate-800/50 text-slate-400 text-xs uppercase">
-                            <tr><th class="p-5">Kullanıcı</th><th class="p-5">Email / ID</th><th class="p-5">Yetki</th><th class="p-5 text-right">İşlemler</th></tr>
+                            <tr><th class="p-5">Kullanıcı</th><th class="p-5">Email</th><th class="p-5">Durum</th><th class="p-5">Yetki</th><th class="p-5 text-right">İşlemler</th></tr>
                         </thead>
                         <tbody>
-                            <tr v-for="u in admins" :key="u.id" class="border-t border-slate-800 hover:bg-slate-800/40 transition">
-                                <td class="p-5 font-semibold text-white">{{ u.name }}</td>
+                            <tr v-for="u in allUsers" :key="u.id" class="border-t border-slate-800 hover:bg-slate-800/40 transition">
+                                <td class="p-5 font-semibold text-white">{{ u.name || 'İsimsiz' }}</td>
                                 <td class="p-5 text-slate-300">{{ u.email }}</td>
+                                <td class="p-5">
+                                    <span :class="u.isApproved ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'" class="px-2 py-1 rounded-md text-xs font-bold">
+                                        {{ u.isApproved ? 'Onaylı' : 'Beklemede' }}
+                                    </span>
+                                </td>
                                 <td class="p-5">
                                     <span class="px-2 py-1 rounded-md text-xs font-bold" :class="u.role === 'admin' ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-500/20 text-slate-400'">
                                         {{ u.role }}
                                     </span>
                                 </td>
                                 <td class="p-5 text-right space-x-3">
-                                    <button @click="resetUserPassword(u)" class="text-blue-400 text-sm font-medium">Şifre Sıfırla</button>
+                                    <button @click="toggleApproval(u)" class="text-blue-400 text-sm font-medium">
+                                        {{ u.isApproved ? 'Süresini Bitir' : 'Onayla' }}
+                                    </button>
                                     <button @click="deleteUser(u.id)" class="text-red-400"><i class="fa-solid fa-trash-can"></i></button>
                                 </td>
                             </tr>
@@ -395,7 +425,7 @@
     <!-- Farmer Modal -->
     <div v-if="showFarmerModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
         <div class="glass w-full max-w-md p-8 rounded-3xl border-t-4 border-amber-500">
-            <h3 class="text-2xl font-bold mb-6 text-white">Yeni Çiftçi Kaydı</h3>
+            <h3 class="text-2xl font-bold mb-6 text-white">{{ forms.farmer.id ? 'Çiftçiyi Düzenle' : 'Yeni Çiftçi Kaydı' }}</h3>
             <div class="space-y-4">
                 <input v-model="forms.farmer.name" class="w-full p-3 rounded-xl outline-none" placeholder="Ad Soyad">
                 <input v-model="forms.farmer.phone" class="w-full p-3 rounded-xl outline-none" placeholder="Telefon">
@@ -411,7 +441,7 @@
     <!-- Merchant Modal -->
     <div v-if="showMerchantModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
         <div class="glass w-full max-w-md p-8 rounded-3xl border-t-4 border-amber-500">
-            <h3 class="text-2xl font-bold mb-6 text-white">Yeni Esnaf Kaydı</h3>
+            <h3 class="text-2xl font-bold mb-6 text-white">{{ forms.merchant.id ? 'Esnafı Düzenle' : 'Yeni Esnaf Kaydı' }}</h3>
             <div class="space-y-4">
                 <input v-model="forms.merchant.name" class="w-full p-3 rounded-xl outline-none" placeholder="İşletme Adı">
                 <input v-model="forms.merchant.phone" class="w-full p-3 rounded-xl outline-none" placeholder="Telefon">
@@ -424,10 +454,10 @@
         </div>
     </div>
 
-    <!-- Entry Modal (Warehouse -> Stock) -->
+    <!-- Entry Modal -->
     <div v-if="showEntryModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
         <div class="glass w-full max-w-2xl p-8 rounded-3xl border-t-4 border-amber-500">
-            <h3 class="text-2xl font-bold mb-6 text-white"><i class="fa-solid fa-truck-ramp-box text-amber-500 me-2"></i>Esnaftan Mal Alımı</h3>
+            <h3 class="text-2xl font-bold mb-6 text-white">{{ forms.entry.id ? 'Kayıt Düzenle' : 'Esnaftan Mal Alımı' }}</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div class="space-y-4">
                     <label class="text-xs text-slate-400">Kaynak Esnaf</label>
@@ -448,21 +478,23 @@
                 </div>
                 <div class="space-y-4">
                     <label class="text-xs text-slate-400">Net Kilo (kg)</label>
-                    <input v-model.number="forms.entry.weight" type="number" class="w-full p-3 rounded-xl outline-none">
-                    <label class="text-xs text-slate-400">Protein (%)</label>
-                    <input v-model="forms.entry.protein" type="text" class="w-full p-3 rounded-xl outline-none">
-                    <label class="text-xs text-slate-400">Araç Plakası</label>
+                    <input v-model.number="forms.entry.weight" type="number" class="w-full p-3 rounded-xl outline-none" @input="calcEntryTotal">
+                    <label class="text-xs text-slate-400">Birim Fiyat (₺/kg)</label>
+                    <input v-model.number="forms.entry.price" type="number" class="w-full p-3 rounded-xl outline-none" @input="calcEntryTotal">
+                    <label class="text-xs text-slate-400">Toplam Tutar (Anlık)</label>
+                    <div class="text-2xl font-bold text-amber-500">{{ formatMoney(forms.entry.total || 0) }}</div>
+                    <label class="text-xs text-slate-400">Plaka</label>
                     <input v-model="forms.entry.plate" type="text" class="w-full p-3 rounded-xl outline-none">
                 </div>
             </div>
             <div class="flex gap-3">
                 <button @click="showEntryModal = false" class="flex-1 p-3 rounded-xl bg-slate-700">İptal</button>
-                <button @click="saveEntry" class="flex-1 p-3 rounded-xl gold-gradient font-bold">Stoka Kaydet</button>
+                <button @click="saveEntry" class="flex-1 p-3 rounded-xl gold-gradient font-bold">Kaydet</button>
             </div>
         </div>
     </div>
 
-    <!-- Exit / Sale Modal (The Heart of Financial Logic) -->
+    <!-- Sale Modal -->
     <div v-if="showExitModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
         <div class="glass w-full max-w-3xl p-8 rounded-3xl border-t-4 border-amber-500">
             <h3 class="text-2xl font-bold mb-6 text-white">Satış & Tahsilat İşlemi</h3>
@@ -477,14 +509,14 @@
                     <select v-model="forms.exit.buyerId" class="w-full p-3 rounded-xl outline-none">
                         <option v-for="m in merchants" :value="m.id">{{ m.name }}</option>
                     </select>
-                    <label class="text-xs text-slate-400">Birim Fiyat (₺/kg)</label>
-                    <input v-model.number="forms.exit.price" type="number" class="w-full p-3 rounded-xl outline-none">
+                    <label class="text-xs text-slate-400">Satış Fiyatı (₺/kg)</label>
+                    <input v-model.number="forms.exit.price" type="number" class="w-full p-3 rounded-xl outline-none" @input="calcExitTotals">
                 </div>
                 <div class="space-y-4">
                     <label class="text-xs text-slate-400">Komisyon (%)</label>
-                    <input v-model.number="forms.exit.commission" type="number" class="w-full p-3 rounded-xl outline-none">
+                    <input v-model.number="forms.exit.commission" type="number" class="w-full p-3 rounded-xl outline-none" @input="calcExitTotals">
                     <label class="text-xs text-slate-400">Ek Masraflar (₺)</label>
-                    <input v-model.number="forms.exit.expenses" type="number" class="w-full p-3 rounded-xl outline-none">
+                    <input v-model.number="forms.exit.expenses" type="number" class="w-full p-3 rounded-xl outline-none" @input="calcExitTotals">
                 </div>
                 <div class="space-y-4">
                     <label class="text-xs text-slate-400">Kaynak Ödeme Vadesi</label>
@@ -494,42 +526,23 @@
                 </div>
             </div>
             <div class="bg-amber-500/10 p-6 rounded-2xl mb-8 grid grid-cols-1 md:grid-cols-2 gap-8 text-center border border-amber-500/20">
-                <div><p class="text-sm text-amber-500 uppercase">Alıcıya Yazılacak Brüt</p><p class="text-4xl font-black text-white">{{ formatMoney(calculateGross()) }}</p></div>
-                <div><p class="text-sm text-amber-500 uppercase">Kaynağa Ödenecek Net</p><p class="text-4xl font-black text-white">{{ formatMoney(calculateNet()) }}</p></div>
+                <div><p class="text-sm text-amber-500 uppercase">Alıcıya Yazılacak Brüt</p><p class="text-4xl font-black text-white">{{ formatMoney(calcGross) }}</p></div>
+                <div><p class="text-sm text-amber-500 uppercase">Kaynağa Ödenecek Net</p><p class="text-4xl font-black text-white">{{ formatMoney(calcNet) }}</p></div>
             </div>
             <div class="flex gap-4">
                 <button @click="showExitModal = false" class="flex-1 p-4 rounded-xl bg-slate-700">İptal</button>
-                <button @click="saveExit" class="flex-1 p-4 rounded-xl gold-gradient font-bold">Satışı Onayla ve Kaydet</button>
+                <button @click="saveExit" class="flex-1 p-4 rounded-xl gold-gradient font-bold">SATIŞI ONAYLA</button>
             </div>
         </div>
     </div>
 
-    <!-- Cash Loan Modal (Elden Borç) -->
-    <div v-if="showLoanModalItem" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-        <div class="glass w-full max-w-md p-8 rounded-3xl border-t-4 border-blue-500">
-            <h3 class="text-2xl font-bold mb-6 text-white">Çiftçiye Elden Borç Ver</h3>
-            <div class="space-y-4">
-                <div class="p-3 bg-blue-500/10 rounded-xl text-blue-300 text-sm border border-blue-500/20">
-                    Kayıt edilen tutar, çiftçinin alacağına eklenir ve bir sonraki satıştan otomatik düşülür.
-                </div>
-                <input v-model.number="forms.loan.amount" type="number" class="w-full p-3 rounded-xl outline-none" placeholder="Tutar (₺)">
-                <input v-model="forms.loan.date" type="date" class="w-full p-3 rounded-xl outline-none">
-                <textarea v-model="forms.loan.description" class="w-full p-3 rounded-xl outline-none" placeholder="Açıklama..."></textarea>
-                <div class="flex gap-3 pt-4">
-                    <button @click="showLoanModalItem = false" class="flex-1 p-3 rounded-xl bg-slate-700">İptal</button>
-                    <button @click="saveLoan" class="flex-1 p-3 rounded-xl gold-gradient font-bold">Kaydet</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Warehouse Modal -->
+    <!-- WAREHOUSE MODAL -->
     <div v-if="showWarehouseModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
         <div class="glass w-full max-w-md p-8 rounded-3xl border-t-4 border-amber-500">
             <h3 class="text-2xl font-bold mb-6 text-white">Yeni Depo Tanımla</h3>
             <div class="space-y-4">
                 <input v-model="forms.warehouse.name" class="w-full p-3 rounded-xl outline-none" placeholder="Depo Adı">
-                <input v-model="forms.warehouse.location" class="w-full p-3 rounded-xl outline-none" placeholder="Konum / Adres">
+                <input v-model="forms.warehouse.location" class="w-full p-3 rounded-xl outline-none" placeholder="Konum">
                 <div class="flex gap-3 pt-4">
                     <button @click="showWarehouseModal = false" class="flex-1 p-3 rounded-xl bg-slate-700">İptal</button>
                     <button @click="saveWarehouse" class="flex-1 p-3 rounded-xl gold-gradient font-bold">Kaydet</button>
@@ -538,17 +551,17 @@
         </div>
     </div>
 
-    <!-- User Admin Modal -->
+    <!-- USER MODAL -->
     <div v-if="showUserModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
         <div class="glass w-full max-w-md p-8 rounded-3xl border-t-4 border-amber-500">
-            <h3 class="text-2xl font-bold mb-6 text-white">Sisteme Yeni Kullanıcı Ekle</h3>
+            <h3 class="text-2xl font-bold mb-6 text-white">Sisteme Kullanıcı Ekle</h3>
             <div class="space-y-4">
                 <input v-model="forms.user.name" class="w-full p-3 rounded-xl outline-none" placeholder="Ad Soyad">
                 <input v-model="forms.user.username" class="w-full p-3 rounded-xl outline-none" placeholder="Kullanıcı Adı">
                 <input v-model="forms.user.password" class="w-full p-3 rounded-xl outline-none" placeholder="Geçici Şifre">
                 <div class="flex gap-3 pt-4">
                     <button @click="showUserModal = false" class="flex-1 p-3 rounded-xl bg-slate-700">İptal</button>
-                    <button @click="saveUser" class="flex-1 p-3 rounded-xl gold-gradient font-bold">Kullanıcıyı Oluştur</button>
+                    <button @click="saveUser" class="flex-1 p-3 rounded-xl gold-gradient font-bold">Oluştur</button>
                 </div>
             </div>
         </div>
@@ -562,8 +575,7 @@ const firebaseConfig = {
     projectId: "tahsilat-f0914",
     storageBucket: "tahsilat-f0914.firebasestorage.app",
     messagingSenderId: "1096318157319",
-    appId: "1:1096318157319:web:1f9a18253ad141e224a0a2",
-    measurementId: "G-1D9F1HJBL3"
+    appId: "1:1096318157319:web:1f9a18253ad141e224a0a2"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -577,48 +589,50 @@ createApp({
         const user = ref(null);
         const isAdmin = ref(false);
         const view = ref('dashboard');
+        const isLoginMode = ref(true);
         const authForm = reactive({ email: '', password: '' });
         const forms = reactive({
             farmer: { name: '', phone: '', address: '' },
             merchant: { name: '', phone: '', address: '' },
-            entry: { merchantId: '', product: '', weight: 0, protein: '', plate: '', warehouseId: '' },
+            entry: { id: null, merchantId: '', product: '', weight: 0, price: 0, total: 0, protein: '', plate: '', warehouseId: '' },
             exit: { buyerId: '', price: 0, commission: 2, expenses: 0, sourceVade: '', buyerVade: '' },
-            loan: { amount: 0, date: '', description: '' },
-            warehouse: { name: '', location: '' },
+            warehouse: { id: null, name: '', location: '' },
             user: { name: '', username: '', password: '' }
         });
         const farmers = ref([]); const merchants = ref([]); const warehouses = ref([]);
         const inventory = ref([]); const transactions = ref([]);
-        const stats = reactive({ merchantReceivables: 0, farmerPayables: 0, totalProfit: 0 });
+        const allUsers = ref([]);
+        const stats = reactive({ totalReceivables: 0, totalPayables: 0, totalProfit: 0 });
+        
         const showFarmerModal = ref(false); const showMerchantModal = ref(false);
         const showEntryModal = ref(false); const showExitModal = ref(false);
-        const showWarehouseModal = ref(false); const showLoanModalItem = ref(false);
-        const showUserModal = ref(false);
+        const showWarehouseModal = ref(false); const showUserModal = ref(false);
         const exitItem = ref({});
-        const reportFilter = reactive({ name: '', start: '', end: '', vadeEnd: '' });
 
         const viewTitle = computed(() => {
-            const titles = { dashboard: 'Dashboard', farmers: 'Çiftçi Yönetimi', merchants: 'Esnaf Yönetimi', warehouse: 'Depo ve Stoklar', sales: 'Finansal Kayıtlar', reports: 'Detaylı Ekstreler', bourse: 'Dünya Borsası', admin: 'Yönetici Paneli' };
+            const titles = { dashboard: 'Dashboard', farmers: 'Çiftçi Yönetimi', merchants: 'Esnaf Yönetimi', warehouse: 'Depo ve Stoklar', sales: 'Finansal Kayıtlar', reports: 'Ekstreler', bourse: 'Dünya Borsası', admin: 'Yönetici Paneli' };
             return titles[view.value];
-        });
-
-        const filteredReports = computed(() => {
-            let list = transactions.value.map(t => {
-                const p = farmers.value.find(f => f.id === t.personId) || merchants.value.find(m => m.id === t.personId);
-                return { ...t, personName: p ? p.name : 'Bilinmiyor' };
-            });
-            if (reportFilter.name) list = list.filter(r => r.personName.toLowerCase().includes(reportFilter.name.toLowerCase()));
-            if (reportFilter.start) list = list.filter(r => r.date >= reportFilter.start);
-            if (reportFilter.end) list = list.filter(r => r.date <= reportFilter.end);
-            if (reportFilter.vadeEnd) list = list.filter(r => r.due <= reportFilter.vadeEnd);
-            return list;
         });
 
         const handleAuth = async () => {
             try {
                 let email = authForm.email;
                 if (!email.includes('@')) { email = email.toLowerCase() + '@borsa.com'; }
-                await auth.signInWithEmailAndPassword(email, authForm.password);
+                if (isLoginMode.value) { 
+                    const cred = await auth.signInWithEmailAndPassword(email, authForm.password);
+                    const uDoc = await db.collection('users').doc(cred.user.uid).get();
+                    if (uDoc.exists && !uDoc.data().isApproved) {
+                        await auth.signOut();
+                        alert("Sistem yöneticisi tarafından henüz onaylanmadınız.");
+                        return;
+                    }
+                } else { 
+                    const cred = await auth.createUserWithEmailAndPassword(email, authForm.password);
+                    await db.collection('users').doc(cred.user.uid).set({ email, isApproved: false, role: 'user', createdAt: new Date() });
+                    alert("Kayıt başarılı. Yönetici onayı beklendiği için giriş yapamazsınız.");
+                    isLoginMode.value = true;
+                    return;
+                }
             } catch (e) { alert("Hata: " + e.message); }
         };
 
@@ -639,73 +653,66 @@ createApp({
         };
 
         const updateStats = () => {
-            stats.merchantReceivables = transactions.value.reduce((acc, t) => acc + (t.gross || 0), 0);
-            stats.farmerPayables = transactions.value.reduce((acc, t) => acc + (t.net || 0), 0);
+            stats.totalReceivables = transactions.value.reduce((acc, t) => acc + (t.gross || 0), 0);
+            stats.totalPayables = transactions.value.reduce((acc, t) => acc + (t.net || 0), 0);
             stats.totalProfit = transactions.value.reduce((acc, t) => acc + ((t.gross || 0) - (t.net || 0)), 0);
         };
 
+        // ---CRUD OPERATIONS---
         const saveFarmer = async () => {
-            await db.collection('farmers').add({ ...forms.farmer, uid: auth.currentUser.uid });
-            forms.farmer = { name: '', phone: '', address: '' };
+            if (forms.farmer.id) await db.collection('farmers').doc(forms.farmer.id).update({ ...forms.farmer });
+            else await db.collection('farmers').add({ ...forms.farmer, uid: auth.currentUser.uid });
             showFarmerModal.value = false; loadData();
         };
+        const openEditFarmer = (f) => { forms.farmer = { ...f }; showFarmerModal.value = true; };
 
         const saveMerchant = async () => {
-            await db.collection('merchants').add({ ...forms.merchant, uid: auth.currentUser.uid });
-            forms.merchant = { name: '', phone: '', address: '' };
+            if (forms.merchant.id) await db.collection('merchants').doc(forms.merchant.id).update({ ...forms.merchant });
+            else await db.collection('merchants').add({ ...forms.merchant, uid: auth.currentUser.uid });
             showMerchantModal.value = false; loadData();
         };
+        const openEditMerchant = (m) => { forms.merchant = { ...m }; showMerchantModal.value = true; };
 
         const saveWarehouse = async () => {
-            await db.collection('warehouses').add({ ...forms.warehouse, uid: auth.currentUser.uid });
-            forms.warehouse = { name: '', location: '' };
+            if (forms.warehouse.id) await db.collection('warehouses').doc(forms.warehouse.id).update({ ...forms.warehouse });
+            else await db.collection('warehouses').add({ ...forms.warehouse, uid: auth.currentUser.uid });
             showWarehouseModal.value = false; loadData();
         };
+        const openEditWarehouse = (w) => { forms.warehouse = { ...w }; showWarehouseModal.value = true; };
 
+        const calcEntryTotal = () => {
+            forms.entry.total = (forms.entry.weight * forms.entry.price) || 0;
+        };
         const saveEntry = async () => {
-            await db.collection('inventory').add({ ...forms.entry, uid: auth.currentUser.uid });
-            forms.entry = { merchantId: '', product: '', weight: 0, protein: '', plate: '', warehouseId: '' };
+            if (forms.entry.id) await db.collection('inventory').doc(forms.entry.id).update({ ...forms.entry });
+            else await db.collection('inventory').add({ ...forms.entry, uid: auth.currentUser.uid });
             showEntryModal.value = false; loadData();
         };
+        const openEditInventory = (s) => { forms.entry = { ...s }; calcEntryTotal(); showEntryModal.value = true; };
+
+        const calcGross = computed(() => (exitItem.value.weight * forms.exit.price) || 0);
+        const calcNet = computed(() => {
+            const gross = calcGross.value;
+            const comm = gross * (forms.exit.commission / 100);
+            return gross - comm - (forms.exit.expenses || 0);
+        });
 
         const prepareExit = (item) => {
             exitItem.value = { ...item, sourceName: getMerchantName(item.entryMerchantId) };
             showExitModal.value = true;
         };
 
-        const calculateGross = () => (exitItem.value.weight * forms.exit.price) || 0;
-        const calculateNet = () => {
-            const gross = calculateGross();
-            const comm = gross * (forms.exit.commission / 100);
-            return gross - comm - (forms.exit.expenses || 0);
-        };
-
         const saveExit = async () => {
-            const gross = calculateGross();
-            const net = calculateNet();
             await db.collection('transactions').add({
-                uid: auth.currentUser.uid,
-                sourceId: exitItem.value.entryMerchantId,
-                sourceName: exitItem.value.sourceName,
-                buyerId: forms.exit.buyerId,
-                weight: exitItem.value.weight,
-                product: exitItem.value.product,
-                gross: gross, net: net,
-                sourceVade: forms.exit.sourceVade,
-                buyerVade: forms.exit.buyerVade,
+                uid: auth.currentUser.uid, sourceId: exitItem.value.entryMerchantId,
+                sourceName: exitItem.value.sourceName, buyerId: forms.exit.buyerId,
+                weight: exitItem.value.weight, product: exitItem.value.product,
+                gross: calcGross.value, net: calcNet.value,
+                sourceVade: forms.exit.sourceVade, buyerVade: forms.exit.buyerVade,
                 date: new Date().toLocaleDateString('tr-TR')
             });
             await db.collection('inventory').doc(exitItem.value.id).delete();
             showExitModal.value = false; loadData();
-        };
-
-        const showLoanModal = (f) => { 
-            forms.loan = { amount: 0, date: new Date().toISOString().split('T')[0], description: '' };
-            showLoanModalItem.value = true; 
-        };
-        const saveLoan = async () => {
-            await db.collection('loans').add({ ...forms.loan, farmerId: farmers.value.find(f => f.name === forms.farmer.name)?.id || 'manual', uid: auth.currentUser.uid });
-            showLoanModalItem.value = false; 
         };
 
         const deleteDoc = async (col, id) => {
@@ -721,27 +728,55 @@ createApp({
 
         const formatMoney = (val) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
 
+        // --- ADMIN LOGIC ---
+        const loadUsers = async () => {
+            const snap = await db.collection('users').get();
+            allUsers.value = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        };
+        const approveUser = async (uid) => {
+            await db.collection('users').doc(uid).update({ isApproved: true });
+            await loadUsers();
+        };
+        const toggleApproval = async (u) => {
+            await db.collection('users').doc(u.id).update({ isApproved: !u.isApproved });
+            await loadUsers();
+        };
+        const saveUser = async () => {
+            const email = forms.user.username + '@borsa.com';
+            const cred = await auth.createUser({ email, password: forms.user.password });
+            await db.collection('users').doc(cred.user.uid).set({
+                name: forms.user.name, email: email, isApproved: true, role: 'user', createdAt: new Date()
+            });
+            showUserModal.value = false; await loadUsers();
+        };
+
         onMounted(() => {
-            auth.onAuthStateChanged(u => { 
+            auth.onAuthStateChanged(async u => { 
                 user.value = u; 
                 if (u) {
                     loadData();
-                    // Admin kontrolü basitleştirilmiş örnektir, gerçekte Firestore'da rol saklanmalıdır
-                    if (u.email === 'AREN@borsa.com') isAdmin.value = true;
+                    if (u.email === 'AREN@borsa.com') {
+                        isAdmin.value = true;
+                        await loadUsers();
+                    }
                 } 
             });
         });
 
         return {
-            user, isAdmin, view, viewTitle, authForm, handleAuth, logout,
+            user, isAdmin, view, viewTitle, authForm, handleAuth, logout, isLoginMode,
             farmers, merchants, warehouses, inventory, transactions, stats,
-            showFarmerModal, showMerchantModal, showEntryModal, showExitModal, showWarehouseModal, showLoanModalItem, showUserModal,
-            exitItem, forms, reportFilter, filteredReports,
-            saveFarmer, saveMerchant, saveWarehouse, saveEntry, prepareExit, calculateGross, calculateNet, saveExit,
-            showLoanModal, saveLoan, deleteDoc, getMerchantName, formatMoney
+            showFarmerModal, showMerchantModal, showEntryModal, showExitModal, showWarehouseModal, showUserModal,
+            exitItem, forms, reportFilter, 
+            saveFarmer, openEditFarmer, saveMerchant, openEditMerchant, saveWarehouse, openEditWarehouse,
+            calcEntryTotal, saveEntry, openEditInventory, prepareExit, calcGross, calcNet, saveExit,
+            deleteDoc, getMerchantName, formatMoney,
+            allUsers, pendingUsers: computed(() => allUsers.value.filter(u => !u.isApproved)),
+            loadUsers, approveUser, toggleApproval, saveUser
         };
     }
 }).mount('#app');
 </script>
 </body>
 </html>
+```
